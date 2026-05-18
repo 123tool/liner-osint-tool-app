@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINER OSINT TOOL - SPY-E 123Tool</title>
+    <style>
+        /* Terminal Styling Hacking UI */
+        :root {
+            --bg-color: #050505;
+            --terminal-green: #00ff33;
+            --terminal-dim: #00881b;
+            --terminal-glow: rgba(0, 255, 51, 0.4);
+            --border-color: #113311;
+            --card-bg: #0a0a0a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--terminal-green);
+            padding: 20px;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle, #0c250c 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Scanline effect overlay */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 9999;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            border: 2px solid var(--terminal-green);
+            background-color: rgba(5, 5, 5, 0.95);
+            box-shadow: 0 0 20px var(--terminal-glow);
+            padding: 25px;
+            border-radius: 5px;
+        }
+
+        /* Header & ASCII Art */
+        header {
+            border-bottom: 2px dashed var(--terminal-green);
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .ascii-art {
+            white-space: pre;
+            font-size: 10px;
+            line-height: 1.2;
+            color: var(--terminal-green);
+            text-shadow: 0 0 8px var(--terminal-green);
+            margin-bottom: 15px;
+            display: inline-block;
+            text-align: left;
+        }
+
+        .branding {
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #ffffff;
+            background-color: var(--terminal-dim);
+            padding: 4px 12px;
+            display: inline-block;
+            margin-top: 10px;
+            font-weight: bold;
+            box-shadow: 0 0 8px var(--terminal-glow);
+        }
+
+        /* Search bar */
+        .search-box {
+            width: 100%;
+            background-color: #000;
+            border: 1px solid var(--terminal-green);
+            color: var(--terminal-green);
+            padding: 12px 15px;
+            font-size: 16px;
+            margin-bottom: 30px;
+            outline: none;
+            box-shadow: inset 0 0 5px var(--terminal-glow);
+        }
+        
+        .search-box:focus {
+            box-shadow: 0 0 10px var(--terminal-green), inset 0 0 5px var(--terminal-glow);
+        }
+
+        /* Category Toggles */
+        .category-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid var(--terminal-dim);
+            color: var(--terminal-dim);
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            border-color: var(--terminal-green);
+            color: var(--terminal-green);
+            box-shadow: 0 0 8px var(--terminal-glow);
+            background-color: rgba(0, 255, 51, 0.05);
+        }
+
+        /* Cards Grid Layout */
+        .dorks-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .dork-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 18px;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+
+        .dork-card:hover {
+            border-color: var(--terminal-green);
+            box-shadow: 0 0 10px rgba(0, 255, 51, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .dork-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 3px rgba(255,255,255,0.3);
+        }
+
+        .dork-category {
+            font-size: 11px;
+            color: var(--terminal-dim);
+            text-transform: uppercase;
+            border: 1px solid var(--border-color);
+            padding: 2px 6px;
+        }
+
+        /* Console command box */
+        .code-block {
+            background-color: #000;
+            border: 1px solid #151515;
+            padding: 12px;
+            position: relative;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .code-text {
+            color: #00ff33;
+            font-size: 13px;
+            word-break: break-all;
+            padding-right: 45px;
+        }
+
+        .copy-btn {
+            background-color: #112211;
+            border: 1px solid var(--terminal-dim);
+            color: var(--terminal-green);
+            padding: 5px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            position: absolute;
+            right: 10px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--terminal-green);
+            color: #000;
+            box-shadow: 0 0 8px var(--terminal-green);
+        }
+
+        /* Footer info */
+        footer {
+            margin-top: 40px;
+            border-top: 1px dashed var(--terminal-dim);
+            padding-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--terminal-dim);
+        }
+
+        .pulse-text {
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <!-- Generated Custom ASCII -->
+        <div class="ascii-art">
+ _      _____ _   _ ______ _____       ____   _____ _____ _   _ _______ 
+| |    |_   _| \ | |  ____|  __ \     / __ \ / ____|_   _| \ | |__   __|
+| |      | | |  \| | |__  | |__) |   | |  | | (___   | | |  \| |  | |   
+| |      | | | . ` |  __| |  _  /    | |  | |\___ \  | | | . ` |  | |   
+| |____ _| |_| |\  | |____| | \ \    | |__| |____) |_| |_| |\  |  | |   
+|______|_____|_| \_|______|_|  \_\    \____/|_____/|_____|_| \_|  |_|</div>
+        <br>
+        <div class="branding">BRANDING SYSTEM: SPY-E 123Tool</div>
+    </header>
+
+    <input type="text" id="searchInput" class="search-box" placeholder="root@spy-e-123tool:~# enter query to scan one-liners...">
+
+    <div class="category-nav" id="categoryNav">
+        <button class="nav-btn active" onclick="filterCategory('all')">[ ALL_TARGETS ]</button>
+        <button class="nav-btn" onclick="filterCategory('personal')">[ PERSONAL_INFO ]</button>
+        <button class="nav-btn" onclick="filterCategory('org')">[ INFRASTRUCTURE_&_ORG ]</button>
+        <button class="nav-btn" onclick="filterCategory('social')">[ SOCMINT_&_NETWORKS ]</button>
+        <button class="nav-btn" onclick="filterCategory('darkweb')">[ DARKWEB_&_LEAKS ]</button>
+        <button class="nav-btn" onclick="filterCategory('geo')">[ GEOLOCATION_INTEL ]</button>
+        <button class="nav-btn" onclick="filterCategory('tools')">[ AUTOMATION_COMMANDS ]</button>
+        <button class="nav-btn" onclick="filterCategory('records')">[ PUBLIC_RECORDS_&_GOV ]</button>
+    </div>
+
+    <div class="dorks-grid" id="dorksContainer">
+        <!-- JS dynamic render -->
+    </div>
+
+    <footer>
+        <p class="pulse-text">TERMINAL CONTROL MONITOR // SECURE ENVIRONMENT // SPY-E 123Tool 2026</p>
+    </footer>
+</div>
+
+<script>
+    // Full Comprehensive Dataset compiled from the Readme source code input
+    const osintDatabase = [
+        // --- PERSONAL INFO & CONTACTS ---
+        { category: "personal", title: "Find target email addresses inside target provider networks", cmd: `"John Doe" "@gmail.com" | "@yahoo.com" | "@outlook.com" -www` },
+        { category: "personal", title: "Scan target data breaches / pastes text dumps", cmd: `"John Doe" site:pastebin.com | site:throwbin.io | site:breachforums.st` },
+        { category: "personal", title: "Extract email listings from specific company domain mapping", cmd: `site:targetcompany.com "@targetcompany.com"` },
+        { category: "personal", title: "Search database queries matching names with direct communication lines", cmd: `"John Doe" "phone" | "contact" | "mobile" | "WhatsApp"` },
+        { category: "personal", title: "Scan global public Github developer profile configurations for target structural identities", cmd: `site:github.com "John Doe" "@gmail.com"` },
+        { category: "personal", title: "Track global social platform registration matching specified targets", cmd: `"John Doe" site:linkedin.com | site:facebook.com | site:twitter.com | site:instagram.com` },
+        { category: "personal", title: "Force indexing public indexes of hidden Facebook targets", cmd: `"John Doe" site:facebook.com/public/` },
+        { category: "personal", title: "Force crawl specific Instagram visual identity indicators", cmd: `site:instagram.com "John Doe"` },
+        { category: "personal", title: "Expose public interaction histories inside open knowledge bases & dev portals", cmd: `"John Doe" site:reddit.com | site:quora.com | site:stackoverflow.com` },
+        { category: "personal", title: "Crawl archaic logs, independent system portals and personal web logs", cmd: `"John Doe" site:medium.com | site:tumblr.com | site:blogspot.com` },
+        { category: "personal", title: "Expose consumer priority maps and inventory records", cmd: `"John Doe" site:amazon.com "wishlist"` },
+        { category: "personal", title: "Scrape validation index parameters within mainstream press records", cmd: `"John Doe" site:nytimes.com | site:bbc.com | site:cnn.com` },
+        { category: "personal", title: "Target raw gallery archives and shared images repositories", cmd: `"John Doe" site:flickr.com | site:500px.com | site:pinterest.com` },
+        { category: "personal", title: "Extract formal documents, curriculum vitae datasets, or career summary papers", cmd: `"John Doe" filetype:pdf | filetype:doc "resume" | "curriculum vitae"` },
+        { category: "personal", title: "Map out historical and modern workforce records through career nodes", cmd: `site:linkedin.com/in "John Doe"` },
+        { category: "personal", title: "Expose digital hiring portal trace logs", cmd: `"John Doe" site:indeed.com | site:glassdoor.com` },
+        { category: "personal", title: "Scan core repositories or file dumps for cleartext application layer combinations", cmd: `site:github.com OR site:pastebin.com "password" "username"` },
+        { category: "personal", title: "Expose specific background checks, location data indexes and relatives mappings", cmd: `"John Doe" site:whitepages.com OR site:spokeo.com OR site:intelius.com` },
+        { category: "personal", title: "Reverse mapping caller indexes to establish definitive ownership metrics", cmd: `site:truepeoplesearch.com "123-456-7890"` },
+        { category: "personal", title: "Crawl widespread spreadsheets containing highly sensitive identifiers", cmd: `filetype:xls OR filetype:csv "SSN"` },
+        { category: "personal", title: "Check real-time digital tracking flags using online accounts matching matrices", cmd: `holehe email@example.com` },
+        { category: "personal", title: "Generate logical variations of account email addresses automatically via terminal scripting", cmd: `echo "John Doe" | awk '{print tolower($1$2"@example.com"), tolower($1"."$2"@example.com"), tolower(substr($1,1,1)$2"@example.com")}'` },
+
+        // --- INFRASTRUCTURE & ORGANIZATIONS ---
+        { category: "org", title: "Discover full subdomain ranges bypassing root entry points", cmd: `site:*.targetcompany.com -www` },
+        { category: "org", title: "Force locate web server misconfigurations displaying index paths", cmd: `intitle:"index of" site:targetcompany.com` },
+        { category: "org", title: "Inspect public accessibility loops inside unencrypted data exchange links", cmd: `inurl:ftp:// targetcompany.com` },
+        { category: "org", title: "Search corporate architectures for assets marked under restrictive dissemination rules", cmd: `site:targetcompany.com ext:pdf | ext:doc | ext:ppt "confidential"` },
+        { category: "org", title: "Extract intelligence regarding system frameworks through organizational requisitions", cmd: `site:targetcompany.com "hiring" | "we are looking for"` },
+        { category: "org", title: "Map configuration entry fields, management boards, and systems access terminals", cmd: `site:targetcompany.com inurl:admin | inurl:dashboard | inurl:login` },
+        { category: "org", title: "Locate external references mentioning target networks within data-breach records", cmd: `"targetcompany.com" "data breach" | "leaked database"` },
+        { category: "org", title: "Extract structured tables, backup schemas, or raw data components from remote environments", cmd: `site:targetcompany.com ext:sql | ext:db | ext:json` },
+        { category: "org", title: "Discover explicit tracking IDs or vulnerabilities logged inside network structures", cmd: `site:targetcompany.com inurl:CVE- | intext:"vulnerability"` },
+        { category: "org", title: "Locate unrestricted Google Drive parameters mapping target entity names", cmd: `site:drive.google.com "private" OR "restricted"` },
+        { category: "org", title: "Scan standard database configurations handling raw cluster links without locks", cmd: `inurl:27017 "_id"` },
+        { category: "org", title: "Intercept unauthenticated enterprise search indices directly via network parameters", cmd: `inurl:9200 "_search"` },
+        { category: "org", title: "Crawl public storage engines for applications using direct server storage", cmd: `site:firebasestorage.googleapis.com` },
+        { category: "org", title: "Scan public cloud infrastructure buckets containing target entity identifiers", cmd: `site:s3.amazonaws.com "target"` },
+        { category: "org", title: "Expose environmental cleartext keys used by server architectures", cmd: `site:targetcompany.com ext:env "DB_PASSWORD" | "SECRET_KEY"` },
+        { category: "org", title: "Extract historical archive versions bypassing current proxy protections", cmd: `cache:target.com` },
+        { category: "org", title: "Crawl complete endpoint tracking maps for API versioning layers", cmd: `site:target.com "api/v1/"` },
+        { category: "org", title: "Download structural index layout maps recursively for isolated processing offline", cmd: `wget -r -np -k https://target.com` },
+
+        // --- SOCMINT & NETWORKS ---
+        { category: "social", title: "Advanced X (Twitter) Engine Scraper - Extract user timelines via terminal", cmd: `twint -u username --followers --following --tweets` },
+        { category: "social", title: "X (Twitter) Automation - Extract credentials historically passed through text lines", cmd: `twint -s "password OR API_KEY OR AWS_SECRET_ACCESS_KEY"` },
+        { category: "social", title: "X (Twitter) Geolocation Filter - Isolate timeline inputs by positional boundaries", cmd: `twint -s "keyword" --near "New York"` },
+        { category: "social", title: "Facebook Interception - Isolate internal community memberships matching names", cmd: `google "site:facebook.com/groups username"` },
+        { category: "social", title: "Instagram Content Harvester - Mirror stories sequentially using terminal tools", cmd: `instaloader --stories username` },
+        { category: "social", title: "LinkedIn Employee Mapper - Scrape full corporate workforce rosters automatically", cmd: `linkedin-scraper -c "Google"` },
+        { category: "social", title: "YouTube Subtitle Aggregator - Stream automatic text logs from video frames via bash", cmd: `yt-dlp --write-auto-sub --skip-download "https://www.youtube.com/watch?v=VIDEO_ID"` },
+        { category: "social", title: "TikTok Scraper Core - Mirror historical video packets directly from user endpoints", cmd: `tiktok-scraper user username -n 50 -d` },
+        { category: "social", title: "Telegram Channel Indexer - Discover active group spaces hosting query variables", cmd: `google "site:t.me keyword"` },
+        { category: "social", title: "WhatsApp Router - Audit network flags to verify application layer activation numbers", cmd: `curl -s "https://api.whatsapp.com/send?phone=+1234567890"` },
+        { category: "social", title: "Discord Discovery - Map public server links matching specialized terminology", cmd: `google "site:discord.gg keyword"` },
+
+        // --- DARKWEB & LEAKS ---
+        { category: "darkweb", title: "Query Ahmia Tor proxy directly via terminal channels for darknet references", cmd: `torify curl -s "https://ahmia.fi/search/?q=your_keyword"` },
+        { category: "darkweb", title: "Scan Tor hidden indexing networks for specific content records", cmd: `torify curl -s "https://onionlandsearchengine.com/search?q=your_keyword"` },
+        { category: "darkweb", title: "Isolate onion endpoints passing through structural interface documents", cmd: `torify curl -s "http://example.onion" | grep -oP '(?<=href=")http://[^"]+\.onion'` },
+        { category: "darkweb", title: "Query Darksearch indexes for target specific system profiles", cmd: `site:darksearch.io "email@example.com"` },
+        { category: "darkweb", title: "Query dehashed intelligence models for breach confirmation lists", cmd: `curl -s "https://api.dehashed.com/search?query=email@example.com" -u "your_api_key"` },
+
+        // --- GEOLOCATION ---
+        { category: "geo", title: "ExifTool Engine - Extract internal GPS parameters from raw image packets", cmd: `exiftool image.jpg | grep -i "GPS"` },
+        { category: "geo", title: "IP Lookup Router - Intercept tracking logs from active routing coordinates", cmd: `curl -s "http://ip-api.com/json/8.8.8.8"` },
+        { category: "geo", title: "IP Intel Mapping - Pull telemetry maps from structural network addresses", cmd: `curl -s "https://ipinfo.io/8.8.8.8/json"` },
+        { category: "geo", title: "Reverse Geocoding Map API - Resolve exact coordinates into human-readable locations", cmd: `curl -s "https://nominatim.openstreetmap.org/reverse?format=json&lat=40.748817&lon=-73.985428"` },
+        { category: "geo", title: "Wigle Net API - Map BSSID physical coordinates based on open wireless maps", cmd: `curl "https://wigle.net/api/v2/network/search?netid=XX:XX:XX:XX:XX:XX"` },
+        { category: "geo", title: "Cell Tower Geo Resolver - Trace tower coordinates via open base station metrics", cmd: `curl -s "https://opencellid.org/cell/get?mcc=310&mnc=410&lac=7033&cellid=17811&key=YOUR_API_KEY"` },
+
+        // --- AUTOMATION TOOLS ---
+        { category: "tools", title: "Spiderfoot CLI Engine - Full modular system asset mapping command", cmd: `spiderfoot -s target.com` },
+        { category: "tools", title: "theHarvester Engine - Harvest emails, subdomains, and corporate listings via multi-source queries", cmd: `theHarvester -d target.com -b all` },
+        { category: "tools", title: "Amass Enumeration Engine - Deep asset map infrastructure routing paths", cmd: `amass enum -d target.com` },
+        { category: "tools", title: "Metagoofil System - Pull metadata sets out of documents indexed publicly", cmd: `metagoofil -d target.com -t pdf -o results/` },
+        { category: "tools", title: "Sherlock CLI Engine - Automate identity presence matching down 500+ portals", cmd: `sherlock username` },
+        { category: "tools", title: "GoBuster Directory Auditing - Brute-force internal link layers using wordlists", cmd: `gobuster dir -u target.com -w wordlist.txt` },
+
+        // --- PUBLIC RECORDS & GOV ---
+        { category: "records", title: "CIA Declassified Room - Crawl historical operational files via command line", cmd: `curl -s "https://www.cia.gov/readingroom/search/site/John+Doe"` },
+        { category: "records", title: "FBI Vault Scanning - Probe declassified index files for targets", cmd: `curl -s "https://vault.fbi.gov/search?q=John+Doe"` },
+        { category: "records", title: "US DOJ Press Module - Scan final historical court prosecution entries", cmd: `curl -s "https://www.justice.gov/news?q=John+Doe"` },
+        { category: "records", title: "IRS Non-profit Tracking - Audit tax exemption mappings and operations profiles", cmd: `curl -s "https://apps.irs.gov/app/eos/details/?q=NonprofitName"` },
+        { category: "records", title: "Open Government Data Mapping - Pull target markers from open census records", cmd: `curl -s "https://data.census.gov/cedsci/?q=John+Doe"` }
+    ];
+
+    const dorksContainer = document.getElementById('dorksContainer');
+    const searchInput = document.getElementById('searchInput');
+
+    // Render cards function
+    function renderCards(data) {
+        dorksContainer.innerHTML = '';
+        if(data.length === 0) {
+            dorksContainer.innerHTML = `<div class="dork-card" style="text-align:center; color: var(--terminal-dim);">[ NO_RESULTS_FOUND_FOR_THE_CURRENT_SCAN ]</div>`;
+            return;
+        }
+
+        data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'dork-card';
+            card.setAttribute('data-cat', item.category);
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="dork-title">// ${item.title}</span>
+                    <span class="dork-category">${item.category}</span>
+                </div>
+                <div class="code-block">
+                    <span class="code-text">${escapeHtml(item.cmd)}</span>
+                    <button class="copy-btn" onclick="copyCommand(this, \`${escapeBtnQuote(item.cmd)}\`)">COPY</button>
+                </div>
+            `;
+            dorksContainer.appendChild(card);
+        });
+    }
+
+    // Live search capability
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase();
+        
+        // Remove active category highlights on active typing search
+        const btns = document.querySelectorAll('.nav-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        btns[0].classList.add('active');
+
+        const filtered = osintDatabase.filter(item => 
+            item.title.toLowerCase().includes(query) || 
+            item.cmd.toLowerCase().includes(query) ||
+            item.category.toLowerCase().includes(query)
+        );
+        renderCards(filtered);
+    });
+
+    // Category button filters
+    function filterCategory(category) {
+        // Manage navigation highlights
+        const btns = document.querySelectorAll('.nav-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if(category === 'all') {
+            renderCards(osintDatabase);
+        } else {
+            const filtered = osintDatabase.filter(item => item.category === category);
+            renderCards(filtered);
+        }
+        searchInput.value = ''; // clear search box output text when selecting categories
+    }
+
+    // Copy to clipboard execution
+    function copyCommand(btn, text) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = 'COPIED!';
+            btn.style.backgroundColor = '#00ff33';
+            btn.style.color = '#000';
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.backgroundColor = '#112211';
+                btn.style.color = 'var(--terminal-green)';
+            }, 1200);
+        }).catch(err => {
+            console.error('Failed to copy command stream: ', err);
+        });
+    }
+
+    // Helper sanitization rules
+    function escapeHtml(string) {
+        return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function escapeBtnQuote(string){
+        return String(string).replace(/`/g, '\\`').replace(/\$/g, '\\$');
+    }
+
+    // Initialize application layout state
+    renderCards(osintDatabase);
+</script>
+</body>
+</html>
